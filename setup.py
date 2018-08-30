@@ -48,7 +48,7 @@ setup(
 
 setup(
     name='RegiceClockTest',
-    packages=['test'],
+    packages=['regiceclocktest'],
     author='Alexandre Bailon',
     author_email='abailon@baylibre.com',
     description='Tests for RegiceClock',
@@ -66,4 +66,9 @@ setup(
         'git+https://github.com/BayLibre/libregice.git#egg=LibRegice',
         'git+https://github.com/BayLibre/regice-test.git#egg=RegiceTest',
     ],
+    entry_points={
+        'regice': [
+                'run_tests = regiceclocktest.test:run_tests',
+        ]
+    },
 )

@@ -422,5 +422,8 @@ class TestClockTree(ClockTestCase):
         self.assertNotIn('mux1', tree['osc2'])
         self.assertIn('mux1', tree['osc3'])
 
+def run_tests(module):
+    return unittest.main(module=module, exit=False).result
+
 if __name__ == '__main__':
     unittest.main()
