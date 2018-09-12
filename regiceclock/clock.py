@@ -32,6 +32,10 @@
     clock state and so on.
 """
 
+import warnings
+
+from libregice.device import RegiceObject
+
 class InvalidDivider(Exception):
     """
         An exception raised when the divider could not be determined
@@ -88,6 +92,7 @@ class ClockTree:
         self.device = device
         self.clocks = {}
         self.tree = {}
+        self.peripherals = []
 
     def get(self, name):
         """
@@ -225,6 +230,49 @@ class ClockTree:
                 children = self.get_children(clock_name)
                 tree[clock_name] = self.make_tree(clock, children)
         return tree
+
+    def _test_peripherals(self):
+        if not self.peripherals:
+            warnings.warn("No clock peripheral defined")
+
+    def add_peripheral(self, peripheral):
+        """
+            Add a peripheral to the peripheral list
+
+            The list is used to prefetch the content of peripherals' registers,
+            and to configure the cache for peripherals' registers,
+            in order to speed up clock operations.
+        """
+        self.peripherals.append(peripheral)
+
+    def prefetch(self):
+        """
+            Prefetch the content of peripherals' registers
+        """
+        self._test_peripherals()
+        for peripheral in self.peripherals:
+            peripheral.cache_prefetch()
+
+    def cache_enable(self):
+        """
+            Enable read cache for all peripherals' registers
+
+            From here, any read operation will use the cache,
+            instead of reading from the device.
+        """
+        self._test_peripherals()
+        for peripheral in self.peripherals:
+            peripheral.cache_configure(RegiceObject.READ)
+
+    def cache_disable(self):
+        """
+            Dsable cache for all peripherals' registers
+
+            From here, any acces to registers will be done on device.
+        """
+        self._test_peripherals()
+        for peripheral in self.peripherals:
+            peripheral.cache_configure(RegiceObject.DISABLED)
 
 class Clock:
     """

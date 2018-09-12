@@ -24,6 +24,7 @@
 # SOFTWARE.
 
 import unittest
+import warnings
 
 from svd import SVDText
 from libregice.regiceclienttest import RegiceClientTest
@@ -348,6 +349,10 @@ class TestClockTree(ClockTestCase):
              en_field=self.dev.TEST1.TESTA.A2)
         Divider(name='div3', tree=self.tree, div=2, parent='gate2')
 
+    @classmethod
+    def setUp(self):
+        self.client.memory_restore()
+
     def test_get(self):
         self.assertEqual(self.tree.get(None), None)
         self.assertEqual(self.tree.get('osc3').name, 'osc3')
@@ -421,6 +426,48 @@ class TestClockTree(ClockTestCase):
         self.assertNotIn('mux1', tree['osc1'])
         self.assertNotIn('mux1', tree['osc2'])
         self.assertIn('mux1', tree['osc3'])
+
+    def test_peripherals_warning(self):
+        self.tree.peripherals = []
+        with warnings.catch_warnings(record=True) as warning:
+            self.tree._test_peripherals()
+            self.assertEqual(len(warning), 1)
+
+        self.tree.add_peripheral(self.dev.TEST1)
+        with warnings.catch_warnings(record=True) as warning:
+            self.tree._test_peripherals()
+            self.assertEqual(len(warning), 0)
+
+    def test_cache(self):
+        self.tree.peripherals = [self.dev.TEST1]
+        address = self.dev.TEST1.TESTA.address()
+
+        parent = self.tree.get('mux1').get_parent()
+        self.assertEqual(parent.name, 'osc3')
+
+        self.tree.cache_enable()
+        self.client.memory[address] &= 0xfffffff0
+        parent = self.tree.get('mux1').get_parent()
+        self.assertEqual(parent.name, 'osc3')
+
+        self.tree.cache_disable()
+        parent = self.tree.get('mux1').get_parent()
+        self.assertEqual(parent.name, 'osc1')
+
+    def test_prefetch(self):
+        self.tree.peripherals = [self.dev.TEST1]
+        address = self.dev.TEST1.TESTA.address()
+
+        parent = self.tree.get('mux1').get_parent()
+        self.assertEqual(parent.name, 'osc3')
+
+        self.client.memory[address] &= 0xfffffff0
+        self.tree.cache_enable()
+        self.tree.prefetch()
+        parent = self.tree.get('mux1').get_parent()
+        self.assertEqual(parent.name, 'osc1')
+        self.tree.cache_disable()
+
 
 def run_tests(module):
     return unittest.main(module=module, exit=False).result
