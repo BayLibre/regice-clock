@@ -69,6 +69,8 @@ setup(
     entry_points={
         'regice': [
                 'run_tests = regiceclocktest.test:run_tests',
+                'init_args = regiceclock.plugin:init_args',
+                'process_args = regiceclock.plugin:process_args',
         ]
     },
 )
